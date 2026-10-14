@@ -1,0 +1,185 @@
+---
+title: "An Analysis of MLB Pitching Statistics"
+author: "Borna Anic-Matic"
+date: "2026-10-13"
+output: html_document
+---
+
+## Project Overview
+
+This project examines the relationship between several pitching statistics and Earned Run Average (ERA) among Major League Baseball (MLB) pitchers during the 2025 season. The main goal is to determine how well individual pitching statistics explain variation in ERA and identify which statistics have the strongest relationships with pitching performance.
+
+The analysis focuses on five statistics: strikeouts per nine innings (K/9), walks per nine innings (BB/9), home runs per nine innings (HR/9), hits per nine innings (H/9), and walks plus hits per inning pitched (WHIP).
+
+Using R, the project explores each statistic through scatterplots, Pearson correlation coefficients, and R-squared values. These methods help identify the direction and strength of each relationship, as well as how much variation in ERA can be explained by each statistic individually.
+
+The project also aims to explore how these statistics work together through multiple linear regression.
+
+## Dataset Description
+
+The dataset contains pitching statistics from the 2025 MLB season, obtained from FanGraphs using the baseballr package in R. The data was collected using the fg_pitch_leaders() function, with a minimum qualification of 100 innings pitched.
+
+The analysis uses the following variables:
+
+- ERA (Earned Run Average): The average number of earned runs a pitcher allows per nine innings.
+
+- K/9: The average number of strikeouts recorded per nine innings.
+
+- BB/9: The average number of walks allowed per nine innings.
+
+- HR/9: The average number of home runs allowed per nine innings.
+
+- H/9: The average number of hits allowed per nine innings.
+
+- WHIP: The average number of walks and hits allowed per inning pitched.
+
+The 100-inning minimum helps limit the analysis to pitchers with a substantial amount of playing time during the season. However, the dataset may include both starting pitchers and relief pitchers who meet this requirement.
+
+Each observation represents a pitcher's season-level statistics. The analysis uses these observations to examine patterns across pitchers rather than performance within individual games.
+
+```{r}
+install.packages(c('car','baseballr'))
+```
+
+```{r}
+library(tidyverse)
+library(baseballr)
+library(car)
+```
+
+
+```{r}
+pitching_2025 <- fg_pitch_leaders(startseason = '2025', 
+                                  endseason = '2025',
+                                  qual = "100")
+```
+
+```{r}
+head(pitching_2025)
+```
+```{r}
+summary(pitching_2025)
+```
+
+```{r}
+era_plus_leaders <- pitching_2025 %>%  select(PlayerName, ERA, WHIP, K_9, BB_9, HR_9, H_9) %>% arrange((ERA)) %>% head(10)
+
+era_plus_leaders
+
+
+```
+## Section 1: ERA vs K/9
+
+Research Question: How well of a predictor is K/9 in determining how well a pitcher will be in terms of ERA
+
+```{r}
+
+ERA_K9 <- ggplot(pitching_2025, aes(x = K_9, y = ERA)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE)
+
+ERA_K9
+```
+
+```{r}
+corK9 <- cor(pitching_2025$ERA, pitching_2025$K_9)
+corK9
+
+r_squ_corK9 <- corK9^2
+r_squ_corK9
+
+```
+ERA and K/9 have a moderate negative correaltion. This means as a players K/9 increase ERA tends to decrease. The corelation is approximatly -0.469. We can also see that the r squared value is approximatly 0.220. This exaplins that approximatly 22.0% of the variation of ERA is explained by differnces in K/9. Overall, this suggests that while striking out batters can contribute to preventing runs, other factors, such as walks, hits, and home runs, are also important in understanding ERA.
+
+## Section 2: ERA vs BB_9
+
+Research Question: How much of variation in ERA can be attributed to a pitchers BB_9
+
+```{r}
+ERA_BB <- ggplot(pitching_2025, aes(x = BB_9, y = ERA)) +
+                   geom_point(alpha = 0.6) +
+                   geom_smooth(method = "lm", se = FALSE)
+
+ERA_BB
+
+
+```
+```{r}
+corBB9 <- cor(pitching_2025$BB_9, pitching_2025$ERA)
+corBB9
+
+r_squ_corBB9 <- corBB9^2
+r_squ_corBB9
+```
+ERA and BB/9 have a weak positive correlation of approximately 0.333. This means that as a pitcher's BB/9 increases, their ERA tends to increase. The R-squared value is approximately 0.111, indicating that differences in BB/9 explain about 11.1% of the variation in ERA among pitchers in the dataset.
+
+Overall, this suggests that while pitchers who allow more walks tend to have higher ERAs, there are many other factors that contribute to differences in ERA.
+
+## Section 3: ERA vs HR_9
+
+Research Question: How much of variation in ERA can be explained by a pitchers HR/9
+
+```{r}
+ERA_HR9 <- ggplot(pitching_2025, aes(x = HR_9, y = ERA)) + 
+                  geom_point(alpha = 0.6) +
+                  geom_smooth(method = 'lm', se = FALSE)
+                  
+ERA_HR9
+```
+```{r}
+corHR9 <- cor(pitching_2025$HR_9, pitching_2025$ERA)
+corHR9
+
+r_squ_corHR9 <- corHR9^2
+r_squ_corHR9
+```
+ERA and HR/9 have a moderately strong positive correlation. This suggests that as a pitcher's HR/9 increases, their ERA tends to increase as well. The Pearson correlation is approximately 0.655, with an R-squared value of 0.429. This indicates that approximately 42.9% of the variation in ERA among pitchers in the dataset can be explained by HR/9.
+
+Overall, pitchers who allow more home runs per nine innings tend to have higher ERAs. Compared to K/9 and BB/9, HR/9 explains a greater proportion of the variation in ERA. However, it still does not fully explain differences in ERA among pitchers, suggesting that other factors also contribute to pitching performance.
+
+## Section 4: ERA vs H/9
+
+Research Question: How much variation of ERA can be explained by a pitchers H/9
+
+
+```{r}
+ERA_H9 <- ggplot(pitching_2025, aes(x = H_9, y = ERA)) +
+                 geom_point(alpha = 0.6) +
+                 geom_smooth(method = 'lm', se = FALSE)
+                 
+ERA_H9
+```
+
+```{r}
+corH9 <- cor(pitching_2025$H_9, pitching_2025$ERA)
+corH9
+
+r_squ_corH9 <- corH9^2
+r_squ_corH9
+```
+ERA and H/9 have a strong positive correlation. This suggests that as a pitcher's H/9 increases, their ERA tends to increase as well. The Pearson correlation is approximately 0.864, with an R-squared value of 0.747. This indicates that approximately 74.7% of the variation in ERA among pitchers in the dataset can be explained by H/9.
+
+Overall, pitchers who allow more hits per nine innings tend to have higher ERAs. This makes sense because allowing more hits creates additional opportunities for opposing teams to score runs. Compared to K/9, BB/9, and HR/9, H/9 explains the greatest proportion of variation in ERA so far. However, other factors, such as walks, home runs, and the timing of hits, can also influence ERA.
+
+## Section 5: ERA vs WHIP
+
+Research Question: How much variation in ERA can be explained by a pitchers WHIP
+
+```{r}
+ERA_WHIP <- ggplot(pitching_2025, aes(x = WHIP, y = ERA)) + 
+  geom_point(alpha=0.6) + geom_smooth(method = 'lm', se = FALSE)
+
+ERA_WHIP
+```
+```{r}
+corWHIP <- cor(pitching_2025$WHIP, pitching_2025$ERA)
+corWHIP
+
+r_squ_corWHIP <- corWHIP ^2
+r_squ_corWHIP
+```
+ERA and WHIP have a strong positive correlation. This suggests that as a pitcher's WHIP increases, their ERA tends to increase as well. The Pearson correlation is approximately 0.841, with an R-squared value of 0.707. This indicates that approximately 70.7% of the variation in ERA among pitchers in the dataset can be explained by WHIP.
+
+Overall, pitchers who allow more walks and hits per inning tend to have higher ERAs. This makes sense because allowing more baserunners creates additional opportunities for opposing teams to score runs. Interestingly, WHIP explains slightly less variation in ERA than H/9 alone, despite accounting for both hits and walks. This suggests that adding walks to the measure does not necessarily improve its individual linear relationship with ERA in this dataset.
+
+
