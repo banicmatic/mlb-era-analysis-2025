@@ -3,6 +3,8 @@
 
 ## Project Overview
 
+**Status: Work in Progress (WIP)**
+
 This project examines the relationship between several pitching statistics and Earned Run Average (ERA) among Major League Baseball (MLB) pitchers during the 2025 season.
 
 The goal is to determine how well different pitching statistics explain variation in ERA and identify which statistics have the strongest individual linear relationships with pitching performance.
