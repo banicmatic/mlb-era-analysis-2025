@@ -1,0 +1,552 @@
+---
+title: "An Analysis of MLB Pitching Statistics"
+author: "Borna Anic-Matic"
+date: "2026-10-13"
+output: html_document
+---
+
+# Introduction
+
+## Project Overview
+
+This project examines the relationship between several pitching statistics and Earned Run Average (ERA) among Major League Baseball (MLB) pitchers during the 2025 season. The main goal is to determine how well individual pitching statistics explain variation in ERA and identify which statistics have the strongest relationships with pitching performance.
+
+The analysis focuses on five statistics: strikeouts per nine innings (K/9), walks per nine innings (BB/9), home runs per nine innings (HR/9), hits per nine innings (H/9), and walks plus hits per inning pitched (WHIP).
+
+Using R, the project explores each statistic through scatterplots, Pearson correlation coefficients, and R-squared values. These methods help identify the direction and strength of each relationship, as well as how much variation in ERA can be explained by each statistic individually.
+
+The project also aims to explore how these statistics work together through multiple linear regression.
+
+## Dataset Description
+
+The dataset contains pitching statistics from the 2025 MLB season, obtained from FanGraphs using the baseballr package in R. The data was collected using the fg_pitch_leaders() function, with a minimum qualification of 100 innings pitched.
+
+The analysis uses the following variables:
+
+- ERA (Earned Run Average): The average number of earned runs a pitcher allows per nine innings.
+
+- K/9: The average number of strikeouts recorded per nine innings.
+
+- BB/9: The average number of walks allowed per nine innings.
+
+- HR/9: The average number of home runs allowed per nine innings.
+
+- H/9: The average number of hits allowed per nine innings.
+
+- WHIP: The average number of walks and hits allowed per inning pitched.
+
+The 100-inning minimum helps limit the analysis to pitchers with a substantial amount of playing time during the season. However, the dataset may include both starting pitchers and relief pitchers who meet this requirement.
+
+Each observation represents a pitcher's season-level statistics. The analysis uses these observations to examine patterns across pitchers rather than performance within individual games.
+
+```{r}
+install.packages(c('car','baseballr'))
+```
+
+```{r}
+library(tidyverse)
+library(baseballr)
+library(car)
+```
+
+
+```{r}
+pitching_2025 <- fg_pitch_leaders(startseason = '2025', 
+                                  endseason = '2025',
+                                  qual = "100")
+```
+
+```{r}
+head(pitching_2025)
+```
+```{r}
+summary(pitching_2025)
+```
+
+```{r}
+era_leaders <- pitching_2025 %>%  select(PlayerName, ERA, WHIP, K_9, BB_9, HR_9, H_9) %>% arrange((ERA)) %>% head(10)
+
+era_leaders
+
+
+```
+# Section 1: Exploratory Data Analysis
+## Section 1.1: ERA vs K/9
+
+Research Question: How well of a predictor is K/9 in determining how well a pitcher will be in terms of ERA
+
+```{r}
+
+ERA_K9 <- ggplot(pitching_2025, aes(x = K_9, y = ERA)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE)
+
+ERA_K9
+```
+
+```{r}
+corK9 <- cor(pitching_2025$ERA, pitching_2025$K_9)
+corK9
+
+r_squ_corK9 <- corK9^2
+r_squ_corK9
+
+```
+ERA and K/9 have a moderate negative correaltion. This means as a players K/9 increase ERA tends to decrease. The corelation is approximatly -0.469. We can also see that the r squared value is approximatly 0.220. This exaplins that approximatly 22.0% of the variation of ERA is explained by differnces in K/9. Overall, this suggests that while striking out batters can contribute to preventing runs, other factors, such as walks, hits, and home runs, are also important in understanding ERA.
+
+## Section 1.2: ERA vs BB_9
+
+Research Question: How much of variation in ERA can be attributed to a pitchers BB_9
+
+```{r}
+ERA_BB <- ggplot(pitching_2025, aes(x = BB_9, y = ERA)) +
+                   geom_point(alpha = 0.6) +
+                   geom_smooth(method = "lm", se = FALSE)
+
+ERA_BB
+
+
+```
+```{r}
+corBB9 <- cor(pitching_2025$BB_9, pitching_2025$ERA)
+corBB9
+
+r_squ_corBB9 <- corBB9^2
+r_squ_corBB9
+```
+ERA and BB/9 have a weak positive correlation of approximately 0.333. This means that as a pitcher's BB/9 increases, their ERA tends to increase. The R-squared value is approximately 0.111, indicating that differences in BB/9 explain about 11.1% of the variation in ERA among pitchers in the dataset.
+
+Overall, this suggests that while pitchers who allow more walks tend to have higher ERAs, there are many other factors that contribute to differences in ERA.
+
+## Section 1.3: ERA vs HR_9
+
+Research Question: How much of variation in ERA can be explained by a pitchers HR/9
+
+```{r}
+ERA_HR9 <- ggplot(pitching_2025, aes(x = HR_9, y = ERA)) + 
+                  geom_point(alpha = 0.6) +
+                  geom_smooth(method = 'lm', se = FALSE)
+                  
+ERA_HR9
+```
+```{r}
+corHR9 <- cor(pitching_2025$HR_9, pitching_2025$ERA)
+corHR9
+
+r_squ_corHR9 <- corHR9^2
+r_squ_corHR9
+```
+ERA and HR/9 have a moderately strong positive correlation. This suggests that as a pitcher's HR/9 increases, their ERA tends to increase as well. The Pearson correlation is approximately 0.655, with an R-squared value of 0.429. This indicates that approximately 42.9% of the variation in ERA among pitchers in the dataset can be explained by HR/9.
+
+Overall, pitchers who allow more home runs per nine innings tend to have higher ERAs. Compared to K/9 and BB/9, HR/9 explains a greater proportion of the variation in ERA. However, it still does not fully explain differences in ERA among pitchers, suggesting that other factors also contribute to pitching performance.
+
+## Section 1.4: ERA vs H/9
+
+Research Question: How much variation of ERA can be explained by a pitchers H/9
+
+
+```{r}
+ERA_H9 <- ggplot(pitching_2025, aes(x = H_9, y = ERA)) +
+                 geom_point(alpha = 0.6) +
+                 geom_smooth(method = 'lm', se = FALSE)
+                 
+ERA_H9
+```
+
+```{r}
+corH9 <- cor(pitching_2025$H_9, pitching_2025$ERA)
+corH9
+
+r_squ_corH9 <- corH9^2
+r_squ_corH9
+```
+ERA and H/9 have a strong positive correlation. This suggests that as a pitcher's H/9 increases, their ERA tends to increase as well. The Pearson correlation is approximately 0.864, with an R-squared value of 0.747. This indicates that approximately 74.7% of the variation in ERA among pitchers in the dataset can be explained by H/9.
+
+Overall, pitchers who allow more hits per nine innings tend to have higher ERAs. This makes sense because allowing more hits creates additional opportunities for opposing teams to score runs. Compared to K/9, BB/9, and HR/9, H/9 explains the greatest proportion of variation in ERA so far. However, other factors, such as walks, home runs, and the timing of hits, can also influence ERA.
+
+## Section 1.5: ERA vs WHIP
+
+Research Question: How much variation in ERA can be explained by a pitchers WHIP
+
+```{r}
+ERA_WHIP <- ggplot(pitching_2025, aes(x = WHIP, y = ERA)) + 
+  geom_point(alpha=0.6) + geom_smooth(method = 'lm', se = FALSE)
+
+ERA_WHIP
+```
+```{r}
+corWHIP <- cor(pitching_2025$WHIP, pitching_2025$ERA)
+corWHIP
+
+r_squ_corWHIP <- corWHIP ^2
+r_squ_corWHIP
+```
+ERA and WHIP have a strong positive correlation. This suggests that as a pitcher's WHIP increases, their ERA tends to increase as well. The Pearson correlation is approximately 0.841, with an R-squared value of 0.707. This indicates that approximately 70.7% of the variation in ERA among pitchers in the dataset can be explained by WHIP.
+
+Overall, pitchers who allow more walks and hits per inning tend to have higher ERAs. This makes sense because allowing more baserunners creates additional opportunities for opposing teams to score runs. Interestingly, WHIP explains slightly less variation in ERA than H/9 alone, despite accounting for both hits and walks. This suggests that adding walks to the measure does not necessarily improve its individual linear relationship with ERA in this dataset.
+
+# Section 2: Investigating H/9 and WHIP
+
+Research Question: Does WHIP provide additional explanatory value beyond H/9 when examining variation in ERA among MLB pitchers during the 2025 season?
+
+In Section 1, H/9 and WHIP demonstrated the strongest individual relationships with ERA, explaining approximately 74.7% and 70.7% of the variation, respectively. Interestingly, H/9 had a stronger relationship with ERA despite WHIP incorporating both hits and walks allowed. This raises the question of whether combining H/9 and WHIP can improve our understanding of ERA compared to examining either statistic individually.
+
+To investigate this, Section 2 will examine the relationship between H/9 and WHIP, compare their individual regression models, and develop a multiple linear regression model using both statistics. Multicollinearity will also be examined to determine how the overlap between these variables may affect the interpretation of the results.
+
+## Section 2.1: Relationship Between H/9 and WHIP
+
+```{r}
+H9_WHIP <- ggplot(pitching_2025, aes(x = H_9, y = WHIP)) +
+                 geom_point(alpha = 0.6) +
+                 geom_smooth(method = 'lm', se = FALSE)
+
+H9_WHIP
+```
+
+```{r}
+H9WHIP <- cor(pitching_2025$H_9, pitching_2025$WHIP)
+H9WHIP
+
+r_squ_H9WHIP <- H9WHIP^2
+r_squ_H9WHIP
+
+```
+H/9 and WHIP have a strong positive correlation of approximately 0.879. This suggests that as a pitcher's H/9 increases, their WHIP tends to increase as well. The R-squared value is approximately 0.772, indicating that 77.2% of the variation in H/9 can be explained by its linear relationship with WHIP.
+
+This relationship is expected because WHIP incorporates both hits and walks allowed, while H/9 measures hits allowed per nine innings. The strong correlation suggests that these statistics share a substantial amount of information, which could become important when examining both variables in a multiple regression model.
+
+## Section 2.2 Comparing Individual Regression Models
+
+```{r}
+model_H9 <- lm(ERA ~ H_9, data = pitching_2025)
+
+model_WHIP <- lm(ERA ~ WHIP, data = pitching_2025)
+
+model_combined <- lm(
+  ERA ~ H_9 + WHIP,
+  data = pitching_2025
+)
+
+summary(model_combined)
+```
+
+```{r}
+summary(model_H9)$adj.r.squared
+summary(model_WHIP)$adj.r.squared
+summary(model_combined)$adj.r.squared
+```
+### 2.3 Combined Regression Model
+
+A multiple linear regression model was created using both H/9 and WHIP to examine whether combining these statistics improves the explanation of variation in ERA.
+
+The combined model produced an R-squared value of 0.776 and an adjusted R-squared value of 0.773. This indicates that approximately 77.6% of the observed variation in ERA can be explained by the two predictors collectively.
+
+Compared to the individual models, the combined model demonstrated greater explanatory power, with an adjusted R-squared of 77.3%, compared to 74.5% for H/9 and 70.5% for WHIP. Both H/9 and WHIP had positive regression coefficients and were statistically significant (p < 0.001). This suggests that both variables provide useful information when explaining variation in ERA.
+
+Overall, these results indicate that combining H/9 and WHIP improves the model's ability to explain differences in ERA among pitchers. However, because WHIP already incorporates hits allowed, it is important to examine potential multicollinearity before drawing further conclusions.
+
+## Section 2.4: Multicollinearity
+
+```{r}
+vif(model_combined)
+```
+To investigate potential multicollinearity between H/9 and WHIP, Variance Inflation Factors (VIF) were calculated for the combined regression model. Both variables produced a VIF of approximately 4.383, indicating a moderate degree of multicollinearity.
+
+This result is expected given the strong positive correlation between H/9 and WHIP (r = 0.879). Since WHIP incorporates hits and walks allowed per inning, both statistics contain overlapping information Although this overlap increases uncertainty when estimating the individual regression coefficients, both H/9 and WHIP remained statistically significant in the combined model (p < 0.001).
+
+Overall, the findings suggest that including WHIP alongside H/9 improves the model's explanatory power, despite the multicollinearity present. However, caution is needed when interpreting their individual contributions because the two predictors are closely related.
+
+## 2.5 Summary of Findings
+
+The results from Section 2 suggest that WHIP does provide additional explanatory value beyond H/9 when examining variation in ERA. While H/9 individually explained approximately 74.7% of the variation in ERA, combining H/9 and WHIP increased the R-squared value to 77.6%. However, the strong positive correlation between H/9 and WHIP (r = 0.879) indicates that the two statistics contain substantial overlapping information. This was further supported by their VIF values of 4.383, suggesting a moderate degree of multicollinearity. Despite this overlap, both variables remained statistically significant in the combined regression model. This suggests that WHIP contains additional information associated with ERA that is not fully captured by H/9 alone.
+
+Overall, these findings demonstrate that combining pitching statistics can improve the explanatory power of a regression model, but it is also important to consider how closely related the predictors are when interpreting their individual contributions.
+
+## Section 3: Multiple Regression Analysis
+
+# Section 3: Multiple Regression Analysis
+
+Research Question: To what extent do K/9, BB/9, HR/9, and H/9 collectively explain variation in ERA among MLB pitchers during the 2025 season, and which statistics provide additional explanatory value when other predictors are considered?
+
+In Section 1, each pitching statistic was examined individually to determine its relationship with ERA. The results showed that H/9 had the strongest individual relationship, explaining approximately 74.7% of the variation in ERA. Section 2 further explored the relationship between H/9 and WHIP, finding that combining the two statistics increased the explanatory power of the model to approximately 77.6%, despite the presence of multicollinearity.
+
+Building on these findings, Section 3 will investigate how multiple pitching statistics work together to explain variation in ERA. Rather than examining each statistic separately, multiple linear regression will be used to determine how much additional information each predictor provides when other variables are accounted for. This section will compare regression models with different combinations of K/9, BB/9, HR/9, and H/9. The analysis will also examine statistical significance, multicollinearity, and regression diagnostics to evaluate the models and identify potential limitations.
+
+Overall, the goal is to determine whether combining multiple pitching statistics provides a more complete explanation of ERA and whether the additional complexity meaningfully improves the model.
+
+## Section 3.1: Model Construction
+
+In Section 1, each pitching statistic was examined individually to determine its relationship with ERA. However, pitching performance is influenced by multiple factors, meaning that examining each statistic separately may not provide a complete understanding of the variation in ERA. Multiple linear regression allows us to examine how several pitching statistics collectively explain variation in ERA while accounting for the other predictors included in the model.
+
+This model will incorporate K/9, BB/9, HR/9, and H/9 as independent variables, with ERA serving as the dependent variable. These statistics were selected to represent different aspects of pitching performance, including strikeout ability, walk prevention, home run prevention, and hits allowed.
+
+WHIP was excluded from the model because it is calculated using hits and walks, which are already represented by H/9 and BB/9. Including WHIP alongside these variables would introduce redundant information and potentially severe multicollinearity.
+
+```{r}
+total_model <- lm(ERA ~ H_9 + BB_9 + K_9 + HR_9, pitching_2025)
+
+summary(total_model)
+```
+The multiple linear regression model produced several interesting findings. H/9, BB/9, and HR/9 all demonstrated positive regression coefficients and were statistically significant (p < 0.001). This suggests that increases in these statistics are associated with higher ERAs, even when accounting for the other predictors included in the model. For example, HR/9 had a regression coefficient of approximately 0.951, indicating that a one-unit increase in HR/9 is associated with a 0.951 increase in predicted ERA, holding the other variables constant.
+
+Interestingly, K/9 had a negative regression coefficient of approximately -0.007 but was not statistically significant (p = 0.796). This contrasts with the findings from Section 1, where K/9 demonstrated a moderate negative correlation with ERA and individually explained approximately 22.0% of its variation.
+
+These findings suggest that while K/9 has a meaningful individual relationship with ERA, it may provide limited additional explanatory information when H/9, BB/9, and HR/9 are included in the model. However, this does not necessarily indicate that strikeouts are unimportant to pitching performance, as their relationship with ERA may already be partly reflected in the other predictors.
+
+The multiple regression model produced an R-squared value of 0.8551 and an adjusted R-squared value of 0.8504. This indicates that approximately 85.5% of the observed variation in ERA among pitchers in the dataset can be explained collectively by H/9, BB/9, HR/9, and K/9. The model also demonstrated overall statistical significance (F = 180, p < 0.001).
+
+Compared to the individual models examined in Section 1, the multiple regression model explained a greater proportion of variation in ERA. For example, H/9 individually explained approximately 74.7% of the variation, compared with 85.5% for the combined model. This suggests that examining multiple pitching statistics together provides a more complete explanation of ERA within the dataset.
+
+Overall, these findings demonstrate that combining pitching statistics can improve explanatory power, although not every predictor necessarily provides meaningful additional information. In particular, the lack of statistical significance for K/9 raises questions about whether all four predictors are necessary to achieve this level of explanatory power. This will be investigated further in Section 3.2 through comparisons of different regression models.
+
+## Section 3.2: Comparing Regression Models 
+
+In Section 3.1, the multiple linear regression model explained approximately 85.5% of the variation in ERA. However, while H/9, BB/9, and HR/9 were statistically significant, K/9 was not (p = 0.796). This raises the question of whether including all four predictors is necessary or if a simpler model can achieve similar explanatory power.
+
+To investigate this, four regression models will be constructed, beginning with H/9 alone and progressively adding BB/9, HR/9, and K/9. The models will be compared using R-squared and adjusted R-squared values to determine how much additional variation each predictor explains. Nested-model ANOVA tests will also be used to evaluate whether adding each variable significantly improves model fit.
+
+The overall goal is to determine which combination of pitching statistics provides the strongest explanation of ERA while considering model complexity. In particular, this section will investigate whether K/9 provides enough additional explanatory value to justify its inclusion in the final model.
+
+```{r}
+model_1 <- lm(ERA ~ H_9, data = pitching_2025)
+
+model_2 <- lm(ERA ~ H_9 + BB_9, data = pitching_2025)
+
+model_3 <- lm(ERA ~ H_9 + BB_9 + HR_9,
+              data = pitching_2025)
+
+model_4 <- lm(ERA ~ H_9 + BB_9 + HR_9 + K_9,
+              data = pitching_2025)
+```
+
+```{r}
+anova(model_1, model_2, model_3, model_4)
+```
+A nested-model ANOVA was conducted to examine whether progressively adding pitching statistics significantly improved the regression model's ability to explain variation in ERA.
+
+Adding BB/9 to the initial H/9 model produced a statistically significant improvement (F = 24.469, p < 0.001), reducing the residual sum of squares (RSS) from 33.915 to 30.016. This suggests that BB/9 provides additional explanatory information beyond H/9 alone.
+
+Adding HR/9 produced an even larger improvement, reducing RSS from 30.016 to 19.450 (F = 66.316, p < 0.001). This indicates that HR/9 contributes substantial additional explanatory information after accounting for H/9 and BB/9.
+
+However, adding K/9 resulted in a very small reduction in RSS, from 19.450 to 19.439. The improvement was not statistically significant (F = 0.067, p = 0.796). This supports the findings from Section 3.1, where K/9 was not statistically significant in the full multiple regression model.
+
+Overall, these results suggest that a model incorporating H/9, BB/9, and HR/9 may provide a more efficient explanation of ERA than the four-variable model. Removing K/9 simplifies the model without a meaningful reduction in explanatory power.
+
+```{r}
+summary(model_3)$adj.r.squared
+summary(model_4)$adj.r.squared
+```
+To further evaluate model performance, the adjusted R-squared values of Models 3 and 4 were compared. Model 3, which included H/9, BB/9, and HR/9, produced an adjusted R-squared value of approximately 0.8515, compared with 0.8504 for Model 4, which also included K/9.
+
+Although the difference is relatively small, Model 3 demonstrated slightly greater adjusted explanatory power despite using fewer predictors. Combined with the ANOVA results, which found that adding K/9 did not significantly improve model fit (p = 0.796), this suggests that K/9 provides limited additional information when the other three statistics are already included.
+
+Overall, Model 3 appears to be the more appropriate choice for explaining variation in ERA within this dataset. It achieves nearly identical explanatory power with fewer variables, supporting the principle of model parsimony. However, further regression diagnostics are needed before evaluating the model's reliability and limitations.
+
+## Section 3.3: Multicollinearity Analysis
+
+In Section 3.2, Model 3 was identified as the preferred regression model, using H/9, BB/9, and HR/9 to explain variation in ERA. Although the model demonstrated strong explanatory power, it is important to investigate whether the independent variables are closely related to one another. Multicollinearity occurs when predictors in a regression model are linearly related, potentially making it difficult to estimate and interpret their individual coefficients accurately.
+
+To investigate this, Pearson correlation coefficients and Variance Inflation Factors (VIF) will be calculated for the three predictors. This will help determine whether overlapping information between the statistics presents a concern for the model.
+
+```{r}
+cor(pitching_2025 %>% select(H_9, BB_9, HR_9))
+```
+
+```{r}
+vif(model_3)
+```
+The Pearson correlation matrix revealed relatively weak to moderate relationships between the predictors included in Model 3. The strongest correlation was between H/9 and HR/9 (r = 0.477), which is expected because home runs are included in total hits allowed. H/9 and BB/9 demonstrated a weak positive correlation (r = 0.192), while BB/9 and HR/9 had a very weak positive correlation (r = 0.067).
+
+To further investigate multicollinearity, Variance Inflation Factors (VIF) were calculated for each predictor. H/9 produced a VIF of 1.339, followed by HR/9 at 1.295 and BB/9 at 1.039. All three values were well below the commonly used threshold of 5, indicating that multicollinearity is not a major concern within the model.
+
+Compared to the combined H/9 and WHIP model examined in Section 2, which produced VIF values of approximately 4.383, Model 3 demonstrates substantially less overlap between its predictors.
+
+Overall, these findings support the use of H/9, BB/9, and HR/9 together in a multiple regression model. Although some correlation exists between the statistics, particularly H/9 and HR/9, the low VIF values suggest that multicollinearity is unlikely to substantially affect the precision of the estimated regression coefficients.
+
+## Section 3.4: Regression Diagnostics
+
+In Sections 3.2 and 3.3, Model 3 was identified as the preferred regression model, using H/9, BB/9, and HR/9 to explain variation in ERA. The model demonstrated strong explanatory power, with an adjusted R-squared value of approximately 0.8515, while also showing relatively low levels of multicollinearity.
+
+However, a high R-squared value and low multicollinearity do not necessarily indicate that a regression model satisfies all of its statistical assumptions. It is important to examine the model's residuals and identify potential issues that could affect the reliability of its results. To investigate this, regression diagnostics will be conducted to assess linearity, constant residual variance, and the approximate normality of residuals. Potential outliers and influential observations will also be examined to determine whether individual pitchers have a disproportionate influence on the model. 
+
+Overall, this section aims to evaluate the assumptions and limitations of Model 3 and determine how confidently its statistical results can be interpreted.
+
+```{r}
+par(mfrow = c(2, 2))
+
+plot(model_3)
+
+par(mfrow = c(1, 1))
+```
+Regression diagnostic plots were examined to evaluate the assumptions and potential limitations of Model 3.
+
+The Residuals vs. Fitted plot showed a relatively random distribution of residuals around zero, with no clear nonlinear patterns. This suggests that the linearity assumption is reasonably satisfied.
+
+The Normal Q-Q plot demonstrated that most residuals followed the theoretical normal distribution, although some deviations were observed at the tails. This suggests that the residuals are approximately normally distributed, but there may be some departures from normality among more extreme observations.
+
+The Scale-Location plot showed a relatively consistent spread of residuals, although a slight upward trend was observed. This may indicate mild heteroscedasticity, suggesting that residual variance is not perfectly constant across all predicted ERA values.
+
+Finally, the Residuals vs. Leverage plot identified a small number of observations with relatively high leverage, particularly observations 42 and 123. These observations may warrant further investigation to determine whether they have a disproportionate influence on the model's results.
+
+Overall, the diagnostic plots suggest that Model 3 provides a reasonably appropriate linear representation of the data. However, deviations from normality, potential heteroscedasticity, and higher-leverage observations should be acknowledged when interpreting the regression results.
+
+## Section 3.5: Influential Observations and Cook's Distance
+
+In Section 3.4, regression diagnostic plots were used to evaluate the assumptions of Model 3. While the model appeared to reasonably satisfy the linearity assumption, the Residuals vs. Leverage plot identified several observations that may have a greater influence on the regression results. To investigate these observations further, Cook's Distance will be calculated to identify pitchers who may disproportionately influence the estimated regression coefficients. Cook's Distance measures how much the fitted regression model changes when an individual observation is removed.
+
+This section will identify the most influential observations, examine their pitching statistics, and investigate whether removing these observations meaningfully changes the model's results. The goal is to determine whether the findings remain relatively stable or depend heavily on a small number of pitchers.
+
+```{r}
+cooks_d <- cooks.distance(model_3)
+
+sort(cooks_d, decreasing = TRUE)[1:5]
+```
+
+```{r}
+model_data <- model.frame(model_3)
+
+model_data$PlayerName <- pitching_2025$PlayerName[
+  as.integer(rownames(model_data))
+]
+
+model_data$Cooks_D <- cooks.distance(model_3)
+
+model_data %>%
+  arrange(desc(Cooks_D)) %>%
+  select(PlayerName, ERA, H_9, BB_9, HR_9, Cooks_D) %>%
+  head(5)
+```
+Cook's Distance was calculated to identify observations that may have a disproportionate influence on the regression results. Using a screening threshold of approximately 0.0315 (4/n), the five pitchers with the highest Cook's Distance values were Janson Junk (0.0854), Antonio Senzatela (0.0822), Tomoyuki Sugano (0.0463), Landen Roupp (0.0444), and Gavin Williams (0.0420).
+
+These pitchers demonstrated different statistical characteristics that may contribute to their influence on the model. For example, Antonio Senzatela had a particularly high H/9 of approximately 13.29 and an ERA of 6.65, while Gavin Williams had a relatively high BB/9 of 4.46 despite maintaining an ERA of approximately 3.06.
+
+Although these observations exceeded the screening threshold, this does not necessarily indicate that they should be removed. Instead, further analysis is needed to determine whether excluding potentially influential observations meaningfully changes the regression coefficients or overall conclusions.
+
+```{r}
+sum(cooks.distance(model_3) > 4 / nobs(model_3))
+```
+
+```{r}
+threshold <- 4 / nobs(model_3)
+
+model_3_sensitivity <- lm(
+  ERA ~ H_9 + BB_9 + HR_9,
+  data = model.frame(model_3)[cooks.distance(model_3) <= threshold, ]
+)
+
+summary(model_3_sensitivity)
+```
+### 3.5 Influential Observations — Sensitivity Analysis
+
+Using a Cook's Distance screening threshold of approximately 0.0315 (4/n), eight observations were identified as potentially influential. To investigate their impact on the regression model, a sensitivity analysis was conducted by excluding these observations and refitting Model 3 using the remaining 119 pitchers.
+
+The sensitivity model produced an R-squared value of 0.8737 and an adjusted R-squared value of 0.8704, compared with an adjusted R-squared value of 0.8515 for the original model. This indicates that the revised model explained a greater proportion of the observed variation in ERA within the reduced dataset. 
+
+All three predictors, H/9, BB/9, and HR/9, remained statistically significant (p < 0.001), with positive regression coefficients. This suggests that the overall relationships identified in the original model were maintained after excluding potentially influential observations. However, the increase in explanatory power does not necessarily mean that the revised model is superior, as the analysis was conducted using a smaller and different sample of pitchers. The excluded observations may represent legitimate pitching performances rather than errors in the dataset.
+
+Overall, the sensitivity analysis provides evidence that the main findings are reasonably robust to the exclusion of potentially influential observations. The original model will therefore be retained as the primary analysis, while the sensitivity model serves as an additional check on the stability of the results.
+
+```{r}
+coef(model_3)
+
+coef(model_3_sensitivity)
+```
+A comparison of the regression coefficients revealed that H/9 and HR/9 remained relatively stable after excluding the eight potentially influential observations. The H/9 coefficient decreased from approximately 0.560 to 0.550, representing a change of 1.8%, while the HR/9 coefficient increased from 0.953 to 1.001, a change of 5.1%.
+
+However, the BB/9 coefficient increased from approximately 0.242 to 0.335, representing a more substantial change of 38.2%. This suggests that the estimated relationship between BB/9 and ERA is more sensitive to influential observations than the relationships involving H/9 and HR/9.
+
+Despite these changes, all three predictors remained statistically significant and retained positive coefficients. Overall, the findings suggest that the model's main conclusions are reasonably stable, although caution is needed when interpreting the precise effect associated with BB/9.
+
+The original model will be retained as the primary model because the excluded observations represent potentially valid pitching performances, while the sensitivity analysis provides additional insight into the stability and limitations of the regression results.
+
+## Section 3.6: Summary of Findings
+
+The results from Section 3 demonstrate that combining multiple pitching statistics provides a stronger explanation of variation in ERA than examining each statistic individually. The initial multiple regression model, which included H/9, BB/9, HR/9, and K/9, explained approximately 85.5% of the observed variation in ERA among MLB pitchers during the 2025 season.
+
+However, further model comparisons revealed that K/9 did not provide a statistically significant improvement after accounting for H/9, BB/9, and HR/9 (p = 0.796). This was particularly interesting given that K/9 individually explained approximately 22.0% of the variation in ERA in Section 1. These findings suggest that while strikeouts are associated with pitching performance, much of the information captured by K/9 may already be reflected in the other predictors.
+
+Based on the model comparisons, Model 3, which included H/9, BB/9, and HR/9, was selected as the preferred model. It produced an adjusted R-squared value of approximately 0.8515, slightly higher than the four-variable model. This suggests that a simpler model can achieve comparable explanatory power without including unnecessary predictors.
+
+Multicollinearity analysis further supported this model, with all three predictors producing VIF values below 1.34. Regression diagnostics suggested that the model generally satisfied the linearity assumption, although some deviations from normality, mild heteroscedasticity, and potentially influential observations were identified.
+
+A sensitivity analysis was conducted by excluding eight observations that exceeded the Cook's Distance screening threshold. The adjusted R-squared increased from approximately 0.8515 to 0.8704, while all three predictors remained statistically significant. The coefficients for H/9 and HR/9 remained relatively stable, changing by approximately 1.8% and 5.1%, respectively. However, the BB/9 coefficient increased by approximately 38.2%, suggesting that its estimated relationship with ERA was more sensitive to influential observations.
+
+Overall, the findings suggest that H/9, BB/9, and HR/9 collectively provide a strong statistical explanation of ERA within the dataset. Although the preferred model demonstrates substantial explanatory power, its results should be interpreted with consideration of the identified limitations and the fact that statistical associations do not necessarily establish causation.
+
+# Section 4: Discussion and Conclusion
+
+The analyses conducted throughout this project examined how different pitching statistics individually and collectively explain variation in ERA among MLB pitchers during the 2025 season. Through Pearson correlations, simple and multiple linear regression, model comparisons, and diagnostic testing, several important relationships were identified.
+
+The results demonstrated that while some statistics have strong individual relationships with ERA, their contributions may change when other pitching statistics are considered. In particular, K/9 demonstrated a moderate negative correlation with ERA individually but provided little additional explanatory information when H/9, BB/9, and HR/9 were included in the same model.
+
+This section will discuss the broader baseball implications of these findings, consider the limitations of the statistical analysis, and evaluate what the results suggest about using traditional pitching statistics to understand ERA.
+
+## Section 4.1: Interpretation of Key Findings
+
+The results of this project demonstrate that several pitching statistics have meaningful relationships with ERA, although their explanatory power varies considerably. In the initial exploratory analysis, H/9 demonstrated the strongest individual relationship with ERA, explaining approximately 74.7% of the observed variation. WHIP followed closely at 70.7%, while HR/9, K/9, and BB/9 explained smaller proportions of the variation.
+
+One interesting finding was that H/9 demonstrated a stronger individual relationship with ERA than WHIP, despite WHIP incorporating both hits and walks allowed. Further investigation revealed that combining H/9 and WHIP improved the model's explanatory power, although the two statistics shared substantial overlapping information.
+
+The multiple regression analysis provided further insight into how these statistics work together. The preferred model, which included H/9, BB/9, and HR/9, produced an adjusted R-squared value of approximately 0.8515. This suggests that the three statistics collectively provide a stronger explanation of variation in ERA than any individual statistic examined.
+
+Perhaps the most interesting result involved K/9. In the initial analysis, K/9 demonstrated a moderate negative correlation with ERA and individually explained approximately 22.0% of its variation. However, after accounting for H/9, BB/9, and HR/9, K/9 was no longer statistically significant (p = 0.796). This suggests that its individual relationship with ERA may be partly reflected in the other pitching statistics included in the model.
+
+Overall, these findings highlight the importance of examining pitching statistics both individually and collectively. A statistic may demonstrate a meaningful relationship with ERA on its own without necessarily providing substantial additional information when other variables are considered.
+
+## Section 4.2: Baseball Implications
+
+From a baseball perspective, the results demonstrate the importance of limiting hits, walks, and home runs when attempting to prevent earned runs. These events create opportunities for opposing teams to score and therefore have a clear relationship with ERA.
+
+H/9 demonstrated the strongest individual relationship with ERA, suggesting that pitchers who allow fewer hits generally maintain lower ERAs. However, the multiple regression analysis also demonstrated that walks and home runs provide additional explanatory information beyond hits allowed alone.
+
+The significance of HR/9 is particularly interesting because home runs directly produce runs, while other hits and walks do not necessarily result in scoring. This may help explain why HR/9 contributed substantially to the multiple regression model even after H/9 and BB/9 were included.
+
+The findings involving K/9 also raise important questions about how pitching performance should be evaluated. While strikeouts are valuable because they allow pitchers to record outs without putting the ball in play, the results suggest that strikeout frequency may provide limited additional information when directly examining hits, walks, and home runs allowed.
+
+However, this does not mean strikeouts are unimportant. Rather, some of the benefits associated with strikeouts may already be reflected in other pitching outcomes. Additionally, a pitcher's ability to generate strikeouts may remain useful when evaluating their underlying skills or projecting future performance.
+
+For baseball analysts, these findings demonstrate why individual statistics should not be interpreted in isolation. Examining multiple measures together can provide a more complete understanding of pitching performance while helping identify which statistics contribute distinct information.
+
+## Section 4.3: Limitations of the Analysis
+
+Although the statistical models demonstrated strong explanatory power, several limitations should be considered when interpreting the findings.
+
+First, the analysis was limited to the 2025 MLB season and included only pitchers who recorded at least 100 innings pitched. Consequently, the findings may not fully represent pitchers with smaller workloads or performances across different seasons. The dataset may also include both starting pitchers and relief pitchers, whose roles and pitching conditions can differ.
+
+Second, ERA is influenced by factors beyond an individual pitcher's control. Defensive performance, ballpark conditions, opponent quality, and the sequencing of hits and walks can all contribute to differences in ERA. These factors were not directly included in the regression models.
+
+Another important limitation is the relationship between the predictors and the outcome variable. Hits, walks, and home runs are events that contribute to run scoring, while ERA measures earned runs allowed per nine innings. Consequently, strong statistical relationships between these variables are not necessarily surprising. The models describe differences in ERA within the dataset but do not establish causal relationships or guarantee accurate predictions of future performance.
+
+Regression diagnostics also identified some potential limitations. Although the preferred model showed no major concerns regarding linearity or multicollinearity, deviations from normality and possible mild heteroscedasticity were observed.
+
+Additionally, Cook's Distance identified eight potentially influential observations. A sensitivity analysis showed that the coefficients for H/9 and HR/9 remained relatively stable when these observations were excluded. However, the BB/9 coefficient increased by approximately 38.2%, suggesting that its estimated relationship with ERA was more sensitive to influential observations.
+
+Finally, the reported R-squared values represent explanatory power within the sample used to construct the models. Additional testing using separate datasets would be required to evaluate how effectively these relationships generalize to other pitchers or seasons.
+
+## Section 4.4: Final Conclusion
+
+The purpose of this project was to investigate how several traditional pitching statistics individually and collectively explain variation in ERA among MLB pitchers during the 2025 season.
+
+The results showed that H/9 had the strongest individual relationship with ERA, explaining approximately 74.7% of the observed variation. However, combining H/9, BB/9, and HR/9 produced a stronger model, with an adjusted R-squared value of approximately 0.8515.
+
+One of the most important findings was that K/9, despite having a moderate negative individual relationship with ERA, did not provide a statistically significant improvement once the other three predictors were included. This demonstrates how relationships observed through simple correlations can change when multiple variables are examined simultaneously.
+
+Further model testing supported the selection of H/9, BB/9, and HR/9 as the preferred combination of predictors. The model demonstrated relatively low multicollinearity and generally stable results, although the sensitivity analysis identified some uncertainty surrounding the BB/9 coefficient.
+
+Overall, this project demonstrates the value of statistical modelling in baseball analytics. Rather than relying on individual statistics alone, examining how different measures interact and contribute additional information can provide a more detailed understanding of pitching performance.
+
+While the results offer a strong statistical explanation of ERA within the 2025 dataset, further research would be necessary to determine how effectively these relationships apply across different seasons or predict future pitching performance.
+
+# Section 5: Future Research
+
+While this project examined how several pitching statistics explain variation in ERA during the 2025 MLB season, there are several opportunities for further research that could expand on these findings.
+
+One potential area of investigation would be to examine pitching performance across multiple MLB seasons. Expanding the dataset could help determine whether the relationships identified in this project remain consistent over time or whether their explanatory power changes between seasons. This would also allow for comparisons between different groups of pitchers and provide a larger sample for statistical analysis.
+
+Another potential extension would involve examining alternative measures of pitching performance, such as ERA+ and Fielding Independent Pitching (FIP). Unlike traditional ERA, ERA+ adjusts for league and ballpark effects, while FIP focuses on outcomes such as strikeouts, walks, hit batters, and home runs. Comparing these statistics could provide additional insight into how pitching performance is evaluated and whether different measures produce similar relationships.
+
+Future research could also investigate additional variables, including ground-ball rate, hard-hit rate, and average exit velocity allowed. These statistics may provide information about a pitcher's ability to limit quality contact that is not fully captured by the traditional statistics examined in this project.
+
+Finally, the analysis could be expanded beyond explaining ERA within a single season to predicting future pitching performance. Rather than using statistics from the same season to explain ERA, models could be developed using previous-season statistics to predict ERA in subsequent seasons. Evaluating these models on unseen data would help determine whether the relationships identified in this project have meaningful predictive value.
+
+Overall, these extensions would build on the findings of the current analysis while allowing for a more comprehensive understanding of pitching performance. They would also provide opportunities to apply additional statistical techniques and further develop skills in baseball analytics using R.
